@@ -5,6 +5,8 @@ export type SubscriptionStatus = "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED"
 export type BillingInterval = "MONTHLY" | "YEARLY";
 export type CountryCode = "SA" | "JO";
 export type FeatureType = "BOOLEAN" | "LIMIT";
+export type FeatureModule = "ACCOUNTING" | "SALES" | "PURCHASES" | "BANKING" | "TAX" | "INVENTORY" | "REPORTS" | "PLATFORM";
+export type FeatureStatus = "AVAILABLE" | "BETA" | "COMING_SOON";
 
 export interface PageMeta {
   page: number;
@@ -81,6 +83,9 @@ export interface Feature {
   name: string;
   description: string | null;
   type: FeatureType;
+  module: FeatureModule;
+  status: FeatureStatus;
+  sortOrder: number;
   createdAt: string;
 }
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { Dialog, FormMessage, SubmitButton, useActionForm } from "@/components/ui/interactive";
-import { Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
+import { Button, Field, Input, Select, Textarea, Toggle } from "@/components/ui/primitives";
 import type { ActionState } from "@/lib/actions";
 import type { Feature, FeatureOverride, Plan, Subscription, TenantStatus } from "@/lib/types";
 import { changeSubscription, removeFeatureOverride, setFeatureOverride, setTenantStatus } from "../actions";
@@ -124,7 +124,7 @@ export function SubscriptionDialog({ tenantId, plans, subscription }: { tenantId
 
 export function OverrideDialog({ tenantId, feature, current }: { tenantId: string; feature: Feature; current?: FeatureOverride }) {
   return (
-    <Dialog trigger={current ? "Edit" : "Override"} triggerVariant="ghost" title={feature.name} description="An override replaces the plan's value for this tenant only.">
+    <Dialog trigger="Edit" triggerVariant="ghost" title={feature.name} description="An override replaces the plan's value for this tenant only.">
       {(close) => (
         <DialogForm action={setFeatureOverride.bind(null, tenantId, feature.key)} close={close} submit="Save override">
           {(state) => (
@@ -155,9 +155,50 @@ export function OverrideDialog({ tenantId, feature, current }: { tenantId: strin
 export function RemoveOverrideButton({ tenantId, featureKey }: { tenantId: string; featureKey: string }) {
   return (
     <form action={removeFeatureOverride.bind(null, tenantId, featureKey)}>
-      <SubmitButton variant="secondary" size="sm" pendingLabel="Removing…">
-        Remove
+      <SubmitButton variant="secondary" size="sm" pendingLabel="Resetting…">
+        Reset
       </SubmitButton>
     </form>
+  );
+}
+
+/**
+ * One-click per-company toggle. Writes an override immediately (audited with
+ * the staff member and time), optimistic with rollback if the API refuses.
+ */
+export function FeatureSwitch({ tenantId, feature, enabled, limit }: { tenantId: string; feature: Feature; enabled: boolean; limit: number | null }) {
+  const [checked, setChecked] = useState(enabled);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <span className="flex items-center gap-2">
+      {error && (
+        <span role="alert" className="text-[12px] text-danger">
+          {error}
+        </span>
+      )}
+      <Toggle
+        checked={checked}
+        disabled={pending}
+        aria-label={`${feature.name} for this company`}
+        onChange={(event) => {
+          const next = event.target.checked;
+          setChecked(next);
+          setError(null);
+          startTransition(async () => {
+            const form = new FormData();
+            if (next) form.set("enabled", "on");
+            form.set("reason", next ? "Enabled in console" : "Disabled in console");
+            if (feature.type === "LIMIT" && limit !== null) form.set("limitValue", String(limit));
+            const result = await setFeatureOverride(tenantId, feature.key, {}, form);
+            if (!result.ok) {
+              setChecked(!next);
+              setError(result.error ?? "Could not save");
+            }
+          });
+        }}
+      />
+    </span>
   );
 }

@@ -1,8 +1,10 @@
 import { Check, Minus } from "lucide-react";
 import type { Metadata } from "next";
+import { Fragment } from "react";
 import Link from "next/link";
 import { Badge, ButtonLink, Card, EmptyState, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { adminApi, requireAdmin, requirePermission } from "@/lib/dal";
+import { groupFeatures, STATUS_LABEL } from "@/lib/feature-catalog";
 import { formatMoney } from "@/lib/format";
 import { hasPermission, Perm } from "@/lib/permissions";
 import type { Feature, Plan } from "@/lib/types";
@@ -60,27 +62,44 @@ export default async function PlansPage() {
               </tr>
             </thead>
             <tbody>
-              {features.map((feature) => (
-                <tr key={feature.key} className="transition-colors duration-150 hover:bg-surface-2/50">
-                  <Td>
-                    <div className="font-medium">{feature.name}</div>
-                    <div className="font-mono text-[11.5px] text-muted">{feature.key}</div>
-                  </Td>
-                  {plans.map((plan) => {
-                    const grant = plan.features.find((f) => f.featureKey === feature.key);
-                    return (
-                      <Td key={plan.id}>
-                        {!grant?.enabled ? (
-                          <Minus className="size-4 text-line-strong" aria-label="Not included" />
-                        ) : feature.type === "LIMIT" ? (
-                          <span className="font-mono tabular">{grant.limitValue ?? "Unlimited"}</span>
-                        ) : (
-                          <Check className="size-4 text-success" aria-label="Included" />
-                        )}
+              {groupFeatures(features).map((group) => (
+                <Fragment key={group.id}>
+                  <tr>
+                    <th scope="colgroup" colSpan={plans.length + 1} className="border-b border-line bg-surface-2/60 px-4 pb-2 pt-5 text-left">
+                      <span className="font-display text-[20px] font-normal text-ink">{group.label}</span>
+                      <span className="ml-3 text-[12px] font-normal text-muted">{group.blurb}</span>
+                    </th>
+                  </tr>
+                  {group.features.map((feature) => (
+                    <tr key={feature.key} className="transition-colors duration-150 hover:bg-surface-2/50">
+                      <Td>
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">{feature.name}</span>
+                          {feature.status !== "AVAILABLE" && (
+                            <Badge tone={STATUS_LABEL[feature.status].tone} dot={false}>
+                              {STATUS_LABEL[feature.status].label}
+                            </Badge>
+                          )}
+                        </span>
+                        <span className="font-mono text-[11.5px] text-muted">{feature.key}</span>
                       </Td>
-                    );
-                  })}
-                </tr>
+                      {plans.map((plan) => {
+                        const grant = plan.features.find((f) => f.featureKey === feature.key);
+                        return (
+                          <Td key={plan.id}>
+                            {!grant?.enabled ? (
+                              <Minus className="size-4 text-line-strong" aria-label="Not included" />
+                            ) : feature.type === "LIMIT" ? (
+                              <span className="font-mono tabular">{grant.limitValue ?? "Unlimited"}</span>
+                            ) : (
+                              <Check className="size-4 text-success" aria-label="Included" />
+                            )}
+                          </Td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
             </tbody>
           </Table>
