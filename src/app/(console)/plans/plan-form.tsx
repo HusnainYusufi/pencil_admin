@@ -1,8 +1,9 @@
 "use client";
 
 import { FormMessage, SubmitButton, useActionForm } from "@/components/ui/interactive";
-import { Field, Input, Textarea } from "@/components/ui/primitives";
+import { Badge, Field, Input, Textarea, Toggle } from "@/components/ui/primitives";
 import type { ActionState } from "@/lib/actions";
+import { groupFeatures, STATUS_LABEL } from "@/lib/feature-catalog";
 import type { Feature, Plan } from "@/lib/types";
 
 const CURRENCIES = [
@@ -10,11 +11,11 @@ const CURRENCIES = [
   { code: "JOD", name: "Jordanian dinar", step: "0.001" },
 ] as const;
 
-function Toggle({ name, label, defaultChecked }: { name: string; label: string; defaultChecked: boolean }) {
+function OptionToggle({ name, label, defaultChecked }: { name: string; label: string; defaultChecked: boolean }) {
   return (
-    <label className="flex items-center gap-3 rounded-md border border-line px-3 py-2.5">
-      <input type="checkbox" name={name} defaultChecked={defaultChecked} className="size-4 accent-[var(--ink)]" />
+    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-md border border-line px-3 py-2.5">
       <span className="text-[13.5px]">{label}</span>
+      <Toggle name={name} defaultChecked={defaultChecked} />
     </label>
   );
 }
@@ -75,45 +76,56 @@ export function PlanForm({
             </Field>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Toggle name="isActive" label="Active (can be assigned)" defaultChecked={plan?.isActive ?? true} />
-            <Toggle name="isPublic" label="Public (offered at signup)" defaultChecked={plan?.isPublic ?? true} />
+            <OptionToggle name="isActive" label="Active (can be assigned)" defaultChecked={plan?.isActive ?? true} />
+            <OptionToggle name="isPublic" label="Public (offered at signup)" defaultChecked={plan?.isPublic ?? true} />
           </div>
         </Section>
 
-        <Section title="Entitlements" description="Tick what the plan includes. Limits left empty mean unlimited.">
+        <Section title="Entitlements" description="Switch on what this plan includes, module by module. Limits left empty mean unlimited.">
           {errors.features && <p className="text-[12.5px] text-danger">{errors.features}</p>}
-          <ul className="hairline-grid rounded-lg border border-line bg-surface px-4">
-            {features.map((feature) => {
-              const grant = plan?.features.find((f) => f.featureKey === feature.key);
-              return (
-                <li key={feature.key} className="flex items-center gap-4 py-3">
-                  <input
-                    id={`feature:${feature.key}`}
-                    type="checkbox"
-                    name={`feature:${feature.key}`}
-                    defaultChecked={grant?.enabled ?? false}
-                    className="size-4 accent-[var(--ink)]"
-                  />
-                  <label htmlFor={`feature:${feature.key}`} className="min-w-0 flex-1">
-                    <span className="block font-medium">{feature.name}</span>
-                    <span className="font-mono text-[11.5px] text-muted">{feature.key}</span>
-                  </label>
-                  {feature.type === "LIMIT" && (
-                    <Input
-                      name={`limit:${feature.key}`}
-                      type="number"
-                      min={0}
-                      max={1000000}
-                      defaultValue={grant?.limitValue ?? ""}
-                      placeholder="Unlimited"
-                      aria-label={`${feature.name} limit`}
-                      className="w-32 font-mono"
-                    />
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          {groupFeatures(features).map((group) => (
+            <fieldset key={group.id} className="overflow-hidden rounded-lg border border-line bg-surface">
+              <legend className="sr-only">{group.label}</legend>
+              <div className="flex items-baseline justify-between gap-3 border-b border-line bg-surface-2/60 px-4 py-2.5">
+                <span className="font-medium text-ink">{group.label}</span>
+                <span className="text-[12px] text-muted">{group.blurb}</span>
+              </div>
+              <ul className="hairline-grid px-4">
+                {group.features.map((feature) => {
+                  const grant = plan?.features.find((f) => f.featureKey === feature.key);
+                  const status = STATUS_LABEL[feature.status];
+                  return (
+                    <li key={feature.key} className="flex items-center gap-4 py-3">
+                      <label htmlFor={`feature:${feature.key}`} className="min-w-0 flex-1 cursor-pointer">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">{feature.name}</span>
+                          {feature.status !== "AVAILABLE" && (
+                            <Badge tone={status.tone} dot={false}>
+                              {status.label}
+                            </Badge>
+                          )}
+                        </span>
+                        <span className="block text-[12.5px] text-muted">{feature.description}</span>
+                      </label>
+                      {feature.type === "LIMIT" && (
+                        <Input
+                          name={`limit:${feature.key}`}
+                          type="number"
+                          min={0}
+                          max={1000000}
+                          defaultValue={grant?.limitValue ?? ""}
+                          placeholder="Unlimited"
+                          aria-label={`${feature.name} limit`}
+                          className="w-28 font-mono"
+                        />
+                      )}
+                      <Toggle id={`feature:${feature.key}`} name={`feature:${feature.key}`} defaultChecked={grant?.enabled ?? false} aria-label={`Include ${feature.name}`} />
+                    </li>
+                  );
+                })}
+              </ul>
+            </fieldset>
+          ))}
         </Section>
 
         <Section title="Prices" description="Per currency and billing interval. Leave empty to not offer it.">

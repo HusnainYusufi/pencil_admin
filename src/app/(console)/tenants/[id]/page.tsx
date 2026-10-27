@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiError } from "@/lib/api";
-import { Badge, Card, DataList, EmptyState, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
+import { Badge, Card, DataList, EmptyState, PageHeader} from "@/components/ui/primitives";
 import { requestNow } from "@/lib/time";
 import { adminApi, requireAdmin, requirePermission } from "@/lib/dal";
 import {
@@ -17,7 +17,8 @@ import {
 import { hasPermission, Perm } from "@/lib/permissions";
 import type { AuditLog, CursorPage, Feature, Plan, TenantDetail } from "@/lib/types";
 import { SubscriptionCell } from "@/components/tenant-cells";
-import { OverrideDialog, RemoveOverrideButton, StatusDialog, SubscriptionDialog } from "./tenant-dialogs";
+import { groupFeatures, STATUS_LABEL } from "@/lib/feature-catalog";
+import { FeatureSwitch, OverrideDialog, RemoveOverrideButton, StatusDialog, SubscriptionDialog } from "./tenant-dialogs";
 
 export const metadata: Metadata = { title: "Tenant" };
 
@@ -91,65 +92,57 @@ export default async function TenantPage({ params, searchParams }: PageProps<"/t
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-6">
-          <Card title="Entitlements" description="Effective access: plan values, with per-tenant overrides on top." flush>
-            <Table>
-              <thead>
-                <tr>
-                  <Th>Feature</Th>
-                  <Th>Effective</Th>
-                  <Th>Override</Th>
-                  <Th align="right">
-                    <span className="sr-only">Actions</span>
-                  </Th>
-                </tr>
-              </thead>
-              <tbody>
-                {features.map((feature) => {
-                  const value = tenant.entitlements[feature.key];
-                  const override = overrides.get(feature.key);
-                  return (
-                    <tr key={feature.key}>
-                      <Td>
-                        <div className="font-medium">{feature.name}</div>
-                        <div className="font-mono text-[11.5px] text-muted">{feature.key}</div>
-                      </Td>
-                      <Td>
-                        {!value?.enabled ? (
-                          <span className="text-muted">Not included</span>
-                        ) : feature.type === "LIMIT" ? (
-                          <span className="font-mono tabular">{value.limit ?? "Unlimited"}</span>
-                        ) : (
-                          <Badge tone="success">Included</Badge>
-                        )}
-                      </Td>
-                      <Td>
-                        {override ? (
-                          <span className="block">
-                            <Badge tone="accent" dot={false}>
-                              Override
-                            </Badge>
-                            <span className="mt-1 block text-[12px] text-muted">
-                              {override.reason}
-                              {override.expiresAt && ` · until ${formatDate(override.expiresAt)}`}
-                            </span>
-                          </span>
-                        ) : (
-                          <span className="text-muted">Plan</span>
-                        )}
-                      </Td>
-                      <Td align="right">
-                        {can(Perm.SUBSCRIPTIONS_MANAGE) && (
-                          <div className="flex justify-end gap-1">
-                            <OverrideDialog tenantId={tenant.id} feature={feature} current={override} />
+          <Card title="Entitlements" description="Switch any feature on or off for this company. Changes apply immediately and are audited; Reset returns it to the plan." flush>
+            {groupFeatures(features).map((group) => (
+              <section key={group.id} aria-label={group.label}>
+                <h3 className="border-b border-line bg-surface-2/60 px-5 py-2 text-[12.5px] font-semibold text-ink">{group.label}</h3>
+                <ul className="hairline-grid">
+                  {group.features.map((feature) => {
+                    const value = tenant.entitlements[feature.key];
+                    const override = overrides.get(feature.key);
+                    const enabled = value?.enabled ?? false;
+                    return (
+                      <li key={feature.key} className="flex items-center gap-4 px-5 py-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="flex flex-wrap items-center gap-2">
+                            <span className={enabled ? "font-medium text-ink" : "font-medium text-muted"}>{feature.name}</span>
+                            {feature.status !== "AVAILABLE" && (
+                              <Badge tone={STATUS_LABEL[feature.status].tone} dot={false}>
+                                {STATUS_LABEL[feature.status].label}
+                              </Badge>
+                            )}
+                            {override && (
+                              <Badge tone="accent" dot={false}>
+                                Override
+                              </Badge>
+                            )}
+                          </p>
+                          <p className="text-[12px] text-muted">
+                            {override
+                              ? `${override.reason ?? "Set by staff"}${override.expiresAt ? ` · until ${formatDate(override.expiresAt)}` : ""}`
+                              : enabled
+                                ? "From plan"
+                                : "Not in plan"}
+                            {feature.type === "LIMIT" && enabled && (
+                              <span className="ml-2 font-mono text-ink-2">limit {value?.limit ?? "unlimited"}</span>
+                            )}
+                          </p>
+                        </div>
+                        {can(Perm.SUBSCRIPTIONS_MANAGE) ? (
+                          <div className="flex shrink-0 items-center gap-1">
                             {override && <RemoveOverrideButton tenantId={tenant.id} featureKey={feature.key} />}
+                            <OverrideDialog tenantId={tenant.id} feature={feature} current={override} />
+                            <FeatureSwitch key={`${feature.key}:${enabled}`} tenantId={tenant.id} feature={feature} enabled={enabled} limit={value?.limit ?? null} />
                           </div>
+                        ) : (
+                          <Badge tone={enabled ? "success" : "neutral"}>{enabled ? "On" : "Off"}</Badge>
                         )}
-                      </Td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </Table>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
           </Card>
 
           {activity && (

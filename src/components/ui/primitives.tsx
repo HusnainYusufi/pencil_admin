@@ -259,6 +259,29 @@ export function Field({
   );
 }
 
+/**
+ * Toggle switch. A native checkbox with role="switch", so it works inside
+ * plain forms (no JS), is keyboard/screen-reader correct and needs no
+ * inline styles (strict CSP).
+ */
+export function Toggle({ className, ...props }: Omit<ComponentProps<"input">, "type">) {
+  return (
+    <input
+      type="checkbox"
+      role="switch"
+      className={cn(
+        "relative h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full bg-line-strong transition-colors duration-150",
+        "before:absolute before:left-0.5 before:top-0.5 before:size-4 before:rounded-full before:bg-surface before:shadow-sm before:transition-transform before:duration-150",
+        "checked:bg-ink checked:before:translate-x-4",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
 export function Kbd({ children }: { children: ReactNode }) {
   return (
     <kbd className="rounded border border-line-strong bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] text-ink-2">

@@ -77,7 +77,14 @@ export async function createFeature(_prev: ActionState, form: FormData): Promise
   try {
     await adminApi("/platform/features", {
       method: "POST",
-      body: { key: str(form, "key"), name: str(form, "name"), description: optional(form, "description"), type: str(form, "type") },
+      body: {
+        key: str(form, "key"),
+        name: str(form, "name"),
+        description: optional(form, "description"),
+        type: str(form, "type"),
+        module: optional(form, "module"),
+        status: optional(form, "status"),
+      },
     });
   } catch (error) {
     return toActionError(error);

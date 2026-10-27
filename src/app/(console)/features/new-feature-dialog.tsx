@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { Dialog, FormMessage, SubmitButton, useActionForm } from "@/components/ui/interactive";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
+import { MODULES } from "@/lib/feature-catalog";
 import { createFeature } from "../plans/actions";
 
 function NewFeatureForm({ close }: { close: () => void }) {
@@ -26,6 +27,24 @@ function NewFeatureForm({ close }: { close: () => void }) {
           <option value="LIMIT">Limit (numeric quota)</option>
         </Select>
       </Field>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Module" htmlFor="module" error={errors.module}>
+          <Select id="module" name="module" defaultValue="ACCOUNTING">
+            {MODULES.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Status" htmlFor="status" error={errors.status}>
+          <Select id="status" name="status" defaultValue="COMING_SOON">
+            <option value="AVAILABLE">Available</option>
+            <option value="BETA">Beta</option>
+            <option value="COMING_SOON">Coming soon</option>
+          </Select>
+        </Field>
+      </div>
       <Field label="Description" htmlFor="description" optional error={errors.description}>
         <Textarea id="description" name="description" maxLength={500} />
       </Field>
