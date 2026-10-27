@@ -43,3 +43,27 @@ next-env.d.ts
 
 # local tool caches
 graft/.cache/
+
+# --- secrets: NEVER commit (also enforced by .githooks/pre-commit + CI) --------
+*.env
+!*.env.example
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+# backups, dumps and editor leftovers
+*.bak
+*.backup
+*.old
+*.orig
+*.swp
+*.dump
+*.sql
+*.sql.gz
+backups/
+secrets/
+/graft/

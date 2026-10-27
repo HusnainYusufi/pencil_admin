@@ -6,6 +6,8 @@ import type { NextConfig } from "next";
  * never be cached. Security headers + CSP are set per request in src/proxy.ts.
  */
 const nextConfig: NextConfig = {
+  // Minimal self-contained server for the Docker image (see Dockerfile).
+  output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
   turbopack: {
