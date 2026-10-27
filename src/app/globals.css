@@ -37,6 +37,24 @@
   --info-bg: oklch(0.955 0.022 250);
 
   --shadow: 0 1px 0 oklch(0.2 0.01 75 / 0.04), 0 8px 24px -12px oklch(0.2 0.01 75 / 0.12);
+
+  /*
+   * Data colours (dataviz method). Categorical slots in FIXED order, validated
+   * with validate_palette.js against this surface (#fefdfa, --pairs all):
+   * CVD ΔE ≥ 9.2, normal-vision ≥ 24. Slot 3 is < 3:1 → charts always ship
+   * visible legends/labels + a table view. Never use these for text.
+   */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-other: oklch(0.78 0.01 80);
+  /* Status palette: reserved for state, always paired with icon + label. */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --chart-grid: var(--line);
+  --chart-axis: var(--line-strong);
 }
 
 [data-theme="dark"] {
@@ -67,6 +85,12 @@
   --info-bg: oklch(0.29 0.05 250);
 
   --shadow: 0 1px 0 oklch(0 0 0 / 0.2), 0 12px 32px -16px oklch(0 0 0 / 0.6);
+
+  /* Dark steps of the same hues, validated against #1a1713 (all ≥ 3:1). */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-other: oklch(0.45 0.01 80);
 }
 
 @theme inline {
@@ -90,6 +114,16 @@
   --color-danger-bg: var(--danger-bg);
   --color-info: var(--info);
   --color-info-bg: var(--info-bg);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-other: var(--series-other);
+  --color-status-good: var(--status-good);
+  --color-status-warning: var(--status-warning);
+  --color-status-serious: var(--status-serious);
+  --color-status-critical: var(--status-critical);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-axis: var(--chart-axis);
 
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;

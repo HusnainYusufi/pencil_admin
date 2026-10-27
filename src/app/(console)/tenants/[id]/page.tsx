@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiError } from "@/lib/api";
 import { Badge, Card, DataList, EmptyState, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
+import { requestNow } from "@/lib/time";
 import { adminApi, requireAdmin, requirePermission } from "@/lib/dal";
 import {
   COUNTRY_NAMES,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/format";
 import { hasPermission, Perm } from "@/lib/permissions";
 import type { AuditLog, CursorPage, Feature, Plan, TenantDetail } from "@/lib/types";
+import { SubscriptionCell } from "@/components/tenant-cells";
 import { OverrideDialog, RemoveOverrideButton, StatusDialog, SubscriptionDialog } from "./tenant-dialogs";
 
 export const metadata: Metadata = { title: "Tenant" };
@@ -23,6 +25,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function TenantPage({ params, searchParams }: PageProps<"/tenants/[id]">) {
   await requirePermission(Perm.TENANTS_READ);
+  const now = requestNow();
   const admin = await requireAdmin();
   const { id } = await params;
   if (!UUID.test(id)) notFound();
@@ -180,7 +183,7 @@ export default async function TenantPage({ params, searchParams }: PageProps<"/t
               <DataList
                 items={[
                   { label: "Plan", value: `${sub.plan.name} (${sub.plan.code})` },
-                  { label: "Status", value: <Badge tone={subscriptionTone[sub.status]}>{titleCase(sub.status)}</Badge> },
+                  { label: "Status", value: <SubscriptionCell {...sub} now={now} /> },
                   { label: "Billing", value: titleCase(sub.billingInterval) },
                   { label: "Trial ends", value: formatDate(sub.trialEndsAt) },
                   { label: "Current period", value: `${formatDate(sub.currentPeriodStart)} – ${formatDate(sub.currentPeriodEnd)}` },
