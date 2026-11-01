@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CompanyCell, PlanTag, SubscriptionCell } from "@/components/tenant-cells";
 import { Pagination } from "@/components/ui/pagination";
-import { Badge, Button, ButtonLink, Card, cn, EmptyState, Input, PageHeader, Select, Table, Td, Th } from "@/components/ui/primitives";
+import { AutoSubmitSelect } from "@/components/ui/interactive";
+import { Badge, Button, ButtonLink, Card, cn, EmptyState, Input, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { requestNow } from "@/lib/time";
 import { adminApi, requireAdmin, requirePermission } from "@/lib/dal";
 import { formatDate, tenantStatusTone, timeAgo, titleCase } from "@/lib/format";
@@ -82,18 +83,26 @@ export default async function TenantsPage({ searchParams }: PageProps<"/tenants"
           })}
         </nav>
 
-        <form role="search" className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        {/* Fields are uncontrolled and the URL is the source of truth: the key remounts them when
+            the URL changes without a reload (tabs, Clear), and autoComplete="off" stops the browser
+            restoring a stale selection on refresh. */}
+        <form
+          key={`${filters.status}|${filters.country}|${filters.search}`}
+          role="search"
+          autoComplete="off"
+          className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        >
           {filters.status && <input type="hidden" name="status" value={filters.status} />}
           <label className="relative">
             <span className="sr-only">Search tenants</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
             <Input name="search" defaultValue={filters.search} placeholder="Name, slug or tax number" className="pl-9 sm:w-64" />
           </label>
-          <Select name="country" defaultValue={filters.country ?? ""} aria-label="Country" className="sm:w-40">
+          <AutoSubmitSelect name="country" defaultValue={filters.country ?? ""} aria-label="Country" className="sm:w-40">
             <option value="">All countries</option>
             <option value="SA">Saudi Arabia</option>
             <option value="JO">Jordan</option>
-          </Select>
+          </AutoSubmitSelect>
           <Button type="submit" variant="secondary">
             Apply
           </Button>

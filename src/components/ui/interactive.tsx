@@ -1,9 +1,9 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState, type ComponentProps, type FormEvent, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import type { ActionState } from "@/lib/actions";
-import { Button, cn, type Tone } from "./primitives";
+import { Button, cn, Select, type Tone } from "./primitives";
 
 /**
  * Runs a Server Action from a form WITHOUT React's automatic form reset, so
@@ -46,6 +46,11 @@ export function SubmitButton({
       {pending ? (pendingLabel ?? "Working…") : children}
     </Button>
   );
+}
+
+/** <Select> that submits its form on change, so a filter applies without an extra click. */
+export function AutoSubmitSelect(props: ComponentProps<"select">) {
+  return <Select {...props} onChange={(event) => event.currentTarget.form?.requestSubmit()} />;
 }
 
 /** Result banner for a Server Action (role=status so screen readers announce it). */
