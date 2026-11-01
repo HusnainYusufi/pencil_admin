@@ -99,16 +99,20 @@ export function PlanForm({
                     <span className="font-mono text-[11.5px] text-muted">{feature.key}</span>
                   </label>
                   {feature.type === "LIMIT" && (
-                    <Input
-                      name={`limit:${feature.key}`}
-                      type="number"
-                      min={0}
-                      max={1000000}
-                      defaultValue={grant?.limitValue ?? ""}
-                      placeholder="Unlimited"
-                      aria-label={`${feature.name} limit`}
-                      className="w-32 font-mono"
-                    />
+                    // Width on a wrapper: `cn` doesn't merge Tailwind classes, so `w-32` on the
+                    // Input loses to its built-in `w-full` and the field swallows the label.
+                    <div className="w-32 shrink-0">
+                      <Input
+                        name={`limit:${feature.key}`}
+                        type="number"
+                        min={0}
+                        max={1000000}
+                        defaultValue={grant?.limitValue ?? ""}
+                        placeholder="Unlimited"
+                        aria-label={`${feature.name} limit`}
+                        className="font-mono"
+                      />
+                    </div>
                   )}
                 </li>
               );
