@@ -103,7 +103,7 @@ export function OnboardForm({ plans, idempotencyKey }: { plans: Plan[]; idempote
           label="Temporary password"
           htmlFor="owner.password"
           optional
-          hint="Required for new accounts. Share it through a secure channel, never by plain email."
+          hint="Leave empty to email the owner an activation link (recommended). If you set one, share it through a secure channel."
           error={errors["owner.password"]}
         >
           <div className="flex gap-2">

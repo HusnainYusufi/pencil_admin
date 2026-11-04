@@ -20,9 +20,9 @@ export async function onboardTenant(_prev: ActionState, form: FormData): Promise
   const idempotencyKey = str(form, "idempotencyKey");
   if (!IDEMPOTENCY_KEY.test(idempotencyKey)) return { ok: false, error: "Reload the page and try again." };
 
-  let tenant: Tenant;
+  let tenant: Tenant & { ownerInvitationSent?: boolean };
   try {
-    tenant = await adminApi<Tenant>("/platform/tenants", {
+    tenant = await adminApi<Tenant & { ownerInvitationSent?: boolean }>("/platform/tenants", {
       method: "POST",
       idempotencyKey,
       body: {
@@ -46,7 +46,22 @@ export async function onboardTenant(_prev: ActionState, form: FormData): Promise
     return toActionError(error);
   }
   revalidatePath("/tenants");
-  redirect(`/tenants/${tenant.id}?created=1`);
+  redirect(`/tenants/${tenant.id}?created=1&invite=${tenant.ownerInvitationSent ? "sent" : "failed"}`);
+}
+
+/** Emails the owner a fresh activation / invitation link. (Form-action signature; inputs unused.) */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function resendOwnerInvitation(tenantId: string, _prev: ActionState, _form: FormData): Promise<ActionState> {
+  await requirePermission(Perm.TENANTS_MANAGE);
+  let result: { ownerInvitationSent: boolean };
+  try {
+    result = await adminApi<{ ownerInvitationSent: boolean }>(`/platform/tenants/${assertUuid(tenantId)}/owner-invitation`, { method: "POST" });
+  } catch (error) {
+    return toActionError(error);
+  }
+  return result.ownerInvitationSent
+    ? { ok: true, message: "Invitation emailed to the owner." }
+    : { ok: false, error: "The email could not be sent. Check the API's SMTP settings." };
 }
 
 export async function setTenantStatus(tenantId: string, _prev: ActionState, form: FormData): Promise<ActionState> {
