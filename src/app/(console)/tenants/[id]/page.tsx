@@ -17,7 +17,7 @@ import {
 import { hasPermission, Perm } from "@/lib/permissions";
 import type { AuditLog, CursorPage, Feature, Plan, TenantDetail } from "@/lib/types";
 import { SubscriptionCell } from "@/components/tenant-cells";
-import { OverrideDialog, RemoveOverrideButton, StatusDialog, SubscriptionDialog } from "./tenant-dialogs";
+import { OverrideDialog, RemoveOverrideButton, ResendOwnerInvitation, StatusDialog, SubscriptionDialog } from "./tenant-dialogs";
 
 export const metadata: Metadata = { title: "Tenant" };
 
@@ -29,7 +29,9 @@ export default async function TenantPage({ params, searchParams }: PageProps<"/t
   const admin = await requireAdmin();
   const { id } = await params;
   if (!UUID.test(id)) notFound();
-  const created = (await searchParams).created === "1";
+  const query = await searchParams;
+  const created = query.created === "1";
+  const inviteFailed = query.invite === "failed";
   const can = (p: string) => hasPermission(admin.permissions, p);
 
   const tenant = await adminApi<TenantDetail>(`/platform/tenants/${id}`).catch((error: unknown) => {
@@ -50,7 +52,10 @@ export default async function TenantPage({ params, searchParams }: PageProps<"/t
     <div className="space-y-8">
       {created && (
         <p role="status" className="rounded-lg border border-success/30 bg-success-bg px-4 py-3 text-[13.5px] text-success">
-          Company created with its chart of accounts, fiscal year and owner. Share the owner&apos;s temporary password securely.
+          Company created with its chart of accounts, fiscal year and owner.{" "}
+          {inviteFailed
+            ? "The owner invitation email could not be sent: use \u201cResend owner invitation\u201d once email is configured."
+            : "The owner has been emailed a link to activate the account and sign in."}
         </p>
       )}
 
@@ -76,6 +81,7 @@ export default async function TenantPage({ params, searchParams }: PageProps<"/t
         actions={
           <>
             {sub && can(Perm.SUBSCRIPTIONS_MANAGE) && <SubscriptionDialog tenantId={tenant.id} plans={plans} subscription={sub} />}
+            {can(Perm.TENANTS_MANAGE) && tenant.status === "ACTIVE" && <ResendOwnerInvitation tenantId={tenant.id} />}
             {can(Perm.TENANTS_MANAGE) && tenant.status !== "ARCHIVED" && (
               <StatusDialog tenantId={tenant.id} status={tenant.status} name={tenant.legalName} />
             )}

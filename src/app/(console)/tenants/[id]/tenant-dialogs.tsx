@@ -5,7 +5,7 @@ import { Dialog, FormMessage, SubmitButton, useActionForm } from "@/components/u
 import { Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
 import type { ActionState } from "@/lib/actions";
 import type { Feature, FeatureOverride, Plan, Subscription, TenantStatus } from "@/lib/types";
-import { changeSubscription, removeFeatureOverride, setFeatureOverride, setTenantStatus } from "../actions";
+import { changeSubscription, removeFeatureOverride, resendOwnerInvitation, setFeatureOverride, setTenantStatus } from "../actions";
 
 /** Closes the dialog once its action succeeded (the page re-renders with fresh data). */
 function useCloseOnSuccess(state: ActionState, close: () => void) {
@@ -158,6 +158,19 @@ export function RemoveOverrideButton({ tenantId, featureKey }: { tenantId: strin
       <SubmitButton variant="secondary" size="sm" pendingLabel="Removing…">
         Remove
       </SubmitButton>
+    </form>
+  );
+}
+
+/** Re-sends the owner's activation / invitation email (new link, old ones stop working). */
+export function ResendOwnerInvitation({ tenantId }: { tenantId: string }) {
+  const { state, pending, onSubmit } = useActionForm(resendOwnerInvitation.bind(null, tenantId));
+  return (
+    <form onSubmit={onSubmit} className="flex items-center gap-3">
+      <SubmitButton variant="secondary" size="sm" pending={pending}>
+        Resend owner invitation
+      </SubmitButton>
+      <FormMessage tone={state.ok ? "success" : "danger"}>{state.ok ? state.message : state.error}</FormMessage>
     </form>
   );
 }
